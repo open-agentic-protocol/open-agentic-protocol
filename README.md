@@ -1,9 +1,9 @@
 # Open Agentic Protocol (OAP)
 **A Universal Standard for Portable, Interoperable AI Agents**
 
-*White Paper – Draft v0.1*
+*White Paper – Draft v0.2*
 
-[![Status: Draft](https://img.shields.io/badge/Status-Draft_v0.1-orange.svg)]()
+[![Status: Draft](https://img.shields.io/badge/Status-Draft_v0.2-orange.svg)]()
 [![Contributions: Welcome](https://img.shields.io/badge/Contributions-Welcome_RFCs-brightgreen.svg)]()
 
 ---
@@ -525,6 +525,8 @@ The Council operates transparently: all decisions are published, all votes are r
 
 ## 8. Persona Agents (Portable User Context)
 
+> **Critical architectural distinction:** Persona Agents are fundamentally different from all other OAP agents. They are **never public, never forkable, never shared**. A Persona Agent is a private, encrypted file cryptographically bound to a single user account. It cannot be published to OAPverse, cannot be browsed, and cannot be accessed by any third party — ever. This is by design and by architecture, not merely by policy.
+
 ### 8.1 The Problem It Solves
 
 Today, every AI platform starts from scratch. You explain to ChatGPT that you are a backend developer, that you work in TypeScript, that you prefer concise answers. Then you do the same with Claude. Then with Copilot. Then with the next tool that ships six months from now.
@@ -585,6 +587,20 @@ persona:
     learned_preferences:
       - "Prefers code examples before theoretical explanations"
       - "Dislikes responses that start by restating the question"
+
+    agents:
+      oapverse/research-analyst@2.1.0:
+        last_interaction: 2025-11-04
+        summary: "Used for competitive analysis on API gateway solutions"
+        decisions:
+          - "Shortlisted Kong and Envoy as primary candidates"
+        learned_preferences:
+          - "Prefers output structured as a comparison table first, then narrative"
+      oapverse/code-reviewer@1.0.3:
+        last_interaction: 2025-10-28
+        summary: "Regular use for TypeScript PR reviews on API Gateway v2"
+        learned_preferences:
+          - "Skip style comments, focus on logic and security issues only"
 ```
 
 ### 8.3 The Scope-Based Permission Model
@@ -611,6 +627,7 @@ This model enables fine-grained control:
 | `profile.personal` | Personal context | Lifestyle / wellness agents |
 | `memory.decisions` | Historical decision log | Long-term advisory agents |
 | `memory.learned` | Learned preferences | Conversational agents |
+| `memory.agents` | Interaction history with specific agents | Agents requiring continuity across sessions |
 
 ### 8.4 Portability and Storage
 
@@ -622,7 +639,24 @@ The Persona Agent is **local-first** by design. It lives on the user's device, n
 
 What OAP does **not** do: host Persona Agents. It defines the format. Storage remains under the user's control.
 
-### 8.5 A Persona That Evolves Over Time
+### 8.5 Agent Interaction History: Why It Lives in the Persona, Not in the Agent
+
+A key architectural decision in OAP is that **conversation history and interaction memory with an agent is stored in the Persona, not in the agent itself.**
+
+This is a direct consequence of the open, public nature of OAPverse agents. Because agents are shared, forkable, and community-driven artifacts, they cannot and must not carry any user-specific state. An agent published on OAPverse is a pure, stateless definition — its manifest, its instructions, its tool declarations. It knows nothing about any specific user.
+
+When a user interacts with `oapverse/research-analyst`, the resulting context — what was discussed, what decisions were made, what preferences emerged — is captured in the user's Persona under `memory.agents`, keyed by the agent's fully-qualified identifier and version. The next time the user launches that same agent, they can choose to inject this history via the standard scope permission model.
+
+This separation has several important properties:
+
+- **Privacy by architecture**: no conversation data ever touches a shared, public artifact
+- **User ownership**: the user's interaction history is theirs alone, stored locally in their encrypted Persona
+- **Agent purity**: a public agent remains a clean, community-owned definition — forking it carries no user data
+- **Selective continuity**: the user decides, at each session launch, whether to inject past context — they are never forced to carry history forward
+
+An agent that wants to benefit from prior interaction history must explicitly declare `memory.agents` in its permission scopes. The user sees this request and grants or denies it, just like any other scope.
+
+### 8.7 A Persona That Evolves Over Time
 
 One underexplored aspect of v0.1 is the Persona's capacity to **learn and evolve**. After each session, an OAP-compatible runtime may propose updates to the Persona:
 
@@ -636,7 +670,7 @@ Would you like to update your Persona? [Accept all] [Choose] [Ignore]
 
 The user remains in full control of what enters their Persona. There is no silent learning.
 
-### 8.6 Multiple Personas and Isolation
+### 8.8 Multiple Personas and Isolation
 
 A user can maintain multiple, cryptographically isolated Persona Agents:
 
@@ -650,19 +684,21 @@ A user can maintain multiple, cryptographically isolated Persona Agents:
 
 These personas are **cryptographically isolated**. An agent loading `work.persona` cannot infer the contents of `personal.persona`. Isolation is guaranteed at the format level, not merely by convention.
 
-### 8.7 The Persona as an AI Identity Layer
+### 8.9 The Persona as an AI Identity Layer
 
 In the longer term, the Persona Agent becomes something more fundamental: **the user's identity layer within the AI ecosystem**. Not a profile stored at a vendor. Not an account on a platform. A file you own, carry with you, and selectively reveal depending on context — exactly as you naturally adapt what you share depending on whether you are speaking with a colleague, a doctor, or a friend.
 
 This is likely OAP's most original contribution relative to everything that exists today.
 
-### 8.8 Open Questions for RFCs
+### 8.10 Open Questions for RFCs
 
 Several questions remain open for community discussion:
 
 - How should merge conflicts be handled when a Persona is updated from two devices simultaneously?
 - Should a cryptographic signature format be defined to certify that a Persona has not been tampered with?
 - How should a "stale" Persona (containing outdated information) signal its freshness level to consuming agents?
+- How should `memory.agents` entries be managed over time — what is the retention policy, and should there be a standard compression/summarization mechanism to prevent unbounded growth of interaction history?
+- When a user forks an agent (creating a new identity), should the interaction history from the parent agent be portable to the fork, and if so, how should the user consent to this migration?
 
 ---
 
